@@ -1,0 +1,45 @@
+Cliente + nodos (cada uno en un equipo)
+Cliente cambia valores
+
+Todos deben tener el mismo valor (salvo fallos)
+Procesos fallaran si tienen bool de fallo siempre
+
+El fallo consiste en que dice al resto valores aleatorios,
+si la mayoria dicen una cosa se les hace caso (3,3,3,42) se acepta 3
+Si no hay mayoria la variable no se modifica
+
+Usar putos FOR
+
+-Proceso: Simula un nodo (postulante o oyente) con variable interna
+	extends Thread
+	id proceso cualquiera
+	variable consenso
+	bool error
+	compromisos - Array
+	comisiones - Array
+	extras si necesario
+	----------------------- METODOS / SERVICIOS
+	set(v): valor de la variable
+	propuesta(v): indica valor de v
+	compromiso(v) modifica el estado de los compromisos y comision()
+	comision(v) incrementa numero de comisiones emite confirmacion
+	 al cliente
+	confirmacion(v) notifica el cambio realizado 
+-Cliente: Solo una maquina (main), despliega interfaz para dar ordenes
+ a procesos
+	-Interfaz grafica mejor pero una de texto guay
+		-Fallo
+		-Cambiar valor (cambia el valor de x diciendolo a N)
+		-Sacar estado
+		-Ayuda
+-Servicio: 
+	Despliegue -> 6 procesos -> 2 por maquina minimo
+	Cada proceso tiene un servicio con la lista de procesos
+	El proceso puede hacer la peticion directamente o usar el servicio
+	
+	Despliegue sin servicio -> Tomcat
+	Puerto 8080 y 8081
+	Dependiendo a que puerto llame es un proceso u otro dentro de
+	 la misma maquina
+	
+	Localizacion de nodos preconfigurada (facil) o por broadcast

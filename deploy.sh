@@ -12,7 +12,7 @@ set -euo pipefail
 
 # ── Configuración ──────────────────────────────────────────────────────────────
 REPO_URL="https://github.com/DKNS-JCC/PBFT.git"
-TOMCAT_VERSION="9.0.102"   # Cambia si hay versión más nueva en tomcat.apache.org
+TOMCAT_VERSION="9.0.117"   # Cambia si hay versión más nueva en tomcat.apache.org
 INSTALL_DIR="$(pwd)/pbft-deploy"
 
 # ── Colores ────────────────────────────────────────────────────────────────────
@@ -27,19 +27,60 @@ title() { echo -e "\n${BLUE}═════════════════�
 # ══════════════════════════════════════════════════════════════════════════════
 title "1/6  Verificando requisitos"
 
-# Java 17+
-if ! command -v java &>/dev/null; then
-    error "Java no encontrado. Instala Java 17:\n  Ubuntu/Debian : sudo apt install openjdk-17-jdk\n  Fedora/RHEL   : sudo dnf install java-17-openjdk-devel"
-fi
-JAVA_VER=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}' | cut -d'.' -f1)
-[ "$JAVA_VER" -ge 17 ] || error "Se requiere Java 17+. Versión actual: $JAVA_VER"
-log "Java $JAVA_VER  ✓"
+# Localizar JDK 17+
+# Prioridad: 1) JAVA_HOME si ya apunta a 17+, 2) buscar en ubicaciones estándar, 3) PATH
+_find_java17() {
+    local candidate_homes=(
+        /usr/lib/jvm/java-17-openjdk-amd64
+        /usr/lib/jvm/java-17-openjdk
+        /usr/lib/jvm/temurin-17
+        /usr/lib/jvm/java-17
+        /usr/local/lib/jvm/java-17
+        /opt/java/17
+    )
+    # Si JAVA_HOME ya es 17+ lo usamos directamente
+    if [ -n "${JAVA_HOME:-}" ] && [ -x "$JAVA_HOME/bin/javac" ]; then
+        local v
+        v=$("$JAVA_HOME/bin/java" -version 2>&1 | awk -F '"' '/version/ {print $2}' | cut -d'.' -f1)
+        if [ "$v" -ge 17 ] 2>/dev/null; then
+            echo "$JAVA_HOME"; return 0
+        fi
+    fi
+    # Buscar en ubicaciones estándar
+    for h in "${candidate_homes[@]}"; do
+        if [ -x "$h/bin/javac" ]; then
+            local v
+            v=$("$h/bin/java" -version 2>&1 | awk -F '"' '/version/ {print $2}' | cut -d'.' -f1)
+            if [ "$v" -ge 17 ] 2>/dev/null; then
+                echo "$h"; return 0
+            fi
+        fi
+    done
+    # Último recurso: javac del PATH
+    if command -v javac &>/dev/null; then
+        local v
+        v=$(javac -version 2>&1 | awk '{print $2}' | cut -d'.' -f1)
+        if [ "$v" -ge 17 ] 2>/dev/null; then
+            # Derivar JAVA_HOME desde el binario
+            local bin; bin=$(readlink -f "$(command -v javac)")
+            echo "${bin%/bin/javac}"; return 0
+        fi
+    fi
+    return 1
+}
 
-command -v javac &>/dev/null || error "javac no encontrado. Instala el JDK completo (no solo el JRE)."
-log "javac  ✓"
+JAVA_HOME_17=$(_find_java17) \
+    || error "No se encontró un JDK 17+.\n  Ubuntu/Debian : sudo apt install openjdk-17-jdk\n  Fedora/RHEL   : sudo dnf install java-17-openjdk-devel\n  O define JAVA_HOME apuntando a tu JDK 17."
 
-command -v jar &>/dev/null   || error "jar no encontrado. Instala el JDK completo."
-log "jar    ✓"
+export JAVA_HOME="$JAVA_HOME_17"
+JAVAC="$JAVA_HOME/bin/javac"
+JAR="$JAVA_HOME/bin/jar"
+JAVA_VER=$("$JAVA_HOME/bin/java" -version 2>&1 | awk -F '"' '/version/ {print $2}' | cut -d'.' -f1)
+
+log "JAVA_HOME : $JAVA_HOME"
+log "Java $JAVA_VER   ✓"
+log "javac     ✓  ($JAVAC)"
+log "jar       ✓"
 
 command -v git &>/dev/null   || error "git no encontrado. Instala git: sudo apt install git"
 log "git    ✓"
@@ -109,7 +150,7 @@ TOMCAT_DIR="$INSTALL_DIR/tomcat"
 if [ -f "$TOMCAT_DIR/bin/startup.sh" ]; then
     warn "Tomcat ya instalado en $TOMCAT_DIR — omitiendo descarga."
 else
-    TOMCAT_URL="https://downloads.apache.org/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz"
+    TOMCAT_URL="https://dlcdn.apache.org/tomcat/tomcat-9/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz"
     TOMCAT_TMP="/tmp/apache-tomcat-${TOMCAT_VERSION}.tar.gz"
 
     log "Descargando $TOMCAT_URL ..."
@@ -177,14 +218,14 @@ mkdir -p "$CLASSES_DIR"
 CLASSPATH=$(find "$LIB_DIR" -name "*.jar" | tr '\n' ':')
 find "$SRC_DIR" -name "*.java" > /tmp/pbft_sources.txt
 log "Compilando fuentes Java..."
-javac --release 17 -classpath "$CLASSPATH" -d "$CLASSES_DIR" @/tmp/pbft_sources.txt
+"$JAVAC" --release 17 -classpath "$CLASSPATH" -d "$CLASSES_DIR" @/tmp/pbft_sources.txt
 rm /tmp/pbft_sources.txt
 log "Compilación exitosa."
 
 # Empaquetar WAR
 log "Generando PBFT.war..."
 cd "$PROJECT_DIR/WebContent"
-jar -cf "$WAR" .
+"$JAR" -cf "$WAR" .
 cd "$INSTALL_DIR"
 log "WAR generado: $WAR"
 

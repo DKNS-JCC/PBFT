@@ -8,7 +8,8 @@ import java.util.Random;
 
 public class Proceso extends Thread {
 
-    private static final int NUM_PROCESOS = 2;
+    //totales
+    private static final int NUM_PROCESOS = 4;
 
     private int id;
     private int valor;
@@ -147,6 +148,9 @@ public class Proceso extends Thread {
             }
         }
     }
+
+    public void run() {}
+
 
     public synchronized String estado() {
         return id + "\t" + valor + "\t" + java.util.Arrays.toString(compromisos) + "\t" + error;

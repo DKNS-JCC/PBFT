@@ -105,21 +105,13 @@ public class Interfaz extends JFrame {
 			String texto = valor.getText().trim();
 			if (!texto.isEmpty()) {
 				valor.setText("");
-				new Thread(() -> {
-					try {
-						for (String nodo : nodos) {
-							Client client = ClientBuilder.newClient();
-							URI uri = UriBuilder.fromUri(nodo).build();
-							client.target(uri).path("servicio/propuesta").queryParam("valor", texto).request(MediaType.TEXT_PLAIN).get();
+				for (String nodo : nodos) {
+					new Thread() {
+						public void run() {
+							enviarPropuesta(nodo, texto);
 						}
-						for (int i = 0; i < 6; i++) {
-							Thread.sleep(500);
-							SwingUtilities.invokeLater(() -> actualizarTabla());
-						}
-					} catch (Exception ex) {
-						System.out.println("Error al enviar propuesta: " + ex.getMessage());
-					}
-				}).start();
+					}.start();
+				}
 			}
 		});
 
@@ -137,6 +129,16 @@ public class Interfaz extends JFrame {
 		      }
 		 });
 
+	}
+
+	private void enviarPropuesta(String nodo, String valor) {
+		try {
+			Client client = ClientBuilder.newClient();
+			URI uri = UriBuilder.fromUri(nodo).build();
+			client.target(uri).path("servicio/propuesta").queryParam("valor", valor).request(MediaType.TEXT_PLAIN).get();
+		} catch (Exception ex) {
+			System.out.println("Error propuesta " + nodo + ": " + ex.getMessage());
+		}
 	}
 
 	private void actualizarTabla() {

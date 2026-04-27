@@ -19,6 +19,11 @@ public class Interfaz extends JFrame {
 	private JTextField valor;
 	private JTable table;
 	private DefaultTableModel model;
+	private static final String[] nodos = {
+		"http://localhost:8080/PBFT/rest",
+		"http://172.28.142.255:8080/PBFT/rest"
+	};
+	private static final int PROCESOS_POR_NODO = 2;
 
 	public static void main(String[] args) {
 		Interfaz frame = new Interfaz();
@@ -102,10 +107,15 @@ public class Interfaz extends JFrame {
 				valor.setText("");
 				new Thread(() -> {
 					try {
-						Client client = ClientBuilder.newClient();
-						URI uri = UriBuilder.fromUri("http://localhost:8080/PBFT/rest").build();
-						client.target(uri).path("servicio/propuesta").queryParam("valor", texto).request(MediaType.TEXT_PLAIN).get();
-						SwingUtilities.invokeLater(() -> actualizarTabla());
+						for (String nodo : nodos) {
+							Client client = ClientBuilder.newClient();
+							URI uri = UriBuilder.fromUri(nodo).build();
+							client.target(uri).path("servicio/propuesta").queryParam("valor", texto).request(MediaType.TEXT_PLAIN).get();
+						}
+						for (int i = 0; i < 6; i++) {
+							Thread.sleep(500);
+							SwingUtilities.invokeLater(() -> actualizarTabla());
+						}
 					} catch (Exception ex) {
 						System.out.println("Error al enviar propuesta: " + ex.getMessage());
 					}
@@ -116,34 +126,40 @@ public class Interfaz extends JFrame {
 		btnRefrescar.addActionListener(e -> actualizarTabla());
 		
 		model.addTableModelListener(e -> {
-			if (e.getColumn() == 3) {
-				int row = e.getFirstRow();
-				int id = (int) model.getValueAt(row, 0);
-				boolean error = (boolean) model.getValueAt(row, 3);
-				Client client = ClientBuilder.newClient();
-				URI uri = UriBuilder.fromUri("http://localhost:8080/PBFT/rest").build();
-				WebTarget target = client.target(uri);
-				target.path("servicio/error").queryParam("procesoId", id).queryParam("error", error).request(MediaType.TEXT_PLAIN).get();
-			}
-		});
+		      if (e.getColumn() == 3) {
+		          int row = e.getFirstRow();
+		          int id = (int) model.getValueAt(row, 0);
+		          boolean error = (boolean) model.getValueAt(row, 3);
+		          String nodo = nodos[id / PROCESOS_POR_NODO];
+		          Client client = ClientBuilder.newClient();
+		          URI uri = UriBuilder.fromUri(nodo).build();
+		          client.target(uri).path("servicio/error").queryParam("procesoId", id).queryParam("error", error).request(MediaType.TEXT_PLAIN).get();
+		      }
+		 });
 
 	}
 
 	private void actualizarTabla() {
-		try {
-			Client client = ClientBuilder.newClient();
-			URI uri = UriBuilder.fromUri("http://localhost:8080/PBFT/rest").build();
-			String estado = client.target(uri).path("servicio/estado").request(MediaType.TEXT_PLAIN).get(String.class);
-			model.setRowCount(0);
-			for (String linea : estado.split("\n")) {
-				if (linea.trim().isEmpty()) continue;
-				String[] partes = linea.split("\t");
-				model.addRow(new Object[] {Integer.parseInt(partes[0]), Integer.parseInt(partes[1]), partes[2], Boolean.parseBoolean(partes[3])
-				});
-			}
-		} catch (Exception e) {
-			System.out.println("Error al obtener estado: " + e.getMessage());
-		}
-	}
+	      model.setRowCount(0);
+	      for (String nodo : nodos) {
+	          try {
+	              Client client = ClientBuilder.newClient();
+	              URI uri = UriBuilder.fromUri(nodo).build();
+	              String estado = client.target(uri).path("servicio/estado").request(MediaType.TEXT_PLAIN).get(String.class);
+	              for (String linea : estado.split("\n")) {
+	                  if (linea.trim().isEmpty()) continue;
+	                  String[] partes = linea.split("\t");
+	                  model.addRow(new Object[] {
+	                      Integer.parseInt(partes[0]),
+	                      Integer.parseInt(partes[1]),
+	                      partes[2],
+	                      Boolean.parseBoolean(partes[3])
+	                  });
+	              }
+	          } catch (Exception e) {
+	              System.out.println("Error al obtener estado de " + nodo + ": " + e.getMessage());
+	          }
+	      }
+	  }
 
 }

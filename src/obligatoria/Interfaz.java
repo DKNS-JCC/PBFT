@@ -6,6 +6,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
+import java.awt.List;
 
 import javax.ws.rs.client.*;
 import javax.ws.rs.core.MediaType;
@@ -14,18 +15,27 @@ import java.net.URI;
 
 public class Interfaz extends JFrame {
 
+	//Necesario para la interfaz
 	private static final long serialVersionUID = 1L;
+
 	private JPanel contentPane;
 	private JTextField valor;
 	private JTable table;
 	private DefaultTableModel model;
-	private static final String[] nodos = {
-		"http://localhost:8080/PBFT/rest",
-		"http://172.28.142.255:8080/PBFT/rest"
-	};
+
+	private static final String[] nodos = {};
 	private static final int PROCESOS_POR_NODO = 2;
 
 	public static void main(String[] args) {
+
+		for (int i = 0; i < args.length; i++) {
+			nodos[i] = args[i];
+		}
+		System.out.println("Nodos: ");
+		for (String nodo : nodos) {
+			System.out.println(" - " + nodo);
+		}
+
 		Interfaz frame = new Interfaz();
 		frame.setVisible(true);
 		frame.actualizarTabla();

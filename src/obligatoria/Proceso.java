@@ -52,7 +52,7 @@ public class Proceso extends Thread {
     // broadcast compromiso a todos los servicios
     public void propuesta(int v) {
         System.out.println("Proceso " + id + " propuesta: " + v);
-        int error = new Random().nextInt(100);
+        int errornum = new Random().nextInt(100);
         for (String nodo : nodos) {
             if (error) {
                 Client client = ClientBuilder.newClient();

@@ -4,6 +4,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.client.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriBuilder;
+import javax.annotation.processing.Generated;
 import javax.inject.Singleton;
 import java.net.URI;
 import java.util.HashMap;
@@ -22,17 +23,28 @@ public class Servicio {
     private final Map<Integer, Integer> confirmaciones = new HashMap<>();
 
     public Servicio() {
-        nodos = new String[] {
-            "http://localhost:8080/PBFT/rest",
-            "http://172.28.142.255:8080/PBFT/rest"
-        };
-        clienteUrl = "http://localhost:8080/PBFT/rest";
         int offset = nodoId * procesosPorNodo;
         procesos = new Proceso[] {
             new Proceso(offset + 0, 0, false, nodos, clienteUrl),
             new Proceso(offset + 1, 0, false, nodos, clienteUrl)
         };
     }
+
+    @GET
+    @Path("iniciar")
+    @Produces(MediaType.TEXT_PLAIN)
+    public String iniciar(@QueryParam("nodos") String nodosStr) {
+        this.nodos = nodosStr.split(",");
+        System.out.println("Servicio iniciado con nodos: " + nodosStr);
+        // Reinicializar los procesos con los nodos recibidos
+        int offset = nodoId * procesosPorNodo;
+        procesos = new Proceso[] {
+            new Proceso(offset + 0, 0, false, nodos, clienteUrl),
+            new Proceso(offset + 1, 0, false, nodos, clienteUrl)
+        };
+        return "ok";
+    }
+
 
     @GET
     @Path("propuesta")

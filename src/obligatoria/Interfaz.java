@@ -23,20 +23,46 @@ public class Interfaz extends JFrame {
 	private JTable table;
 	private DefaultTableModel model;
 
-	private static final String[] nodos = {};
+	private static String[] nodos = new String[0];
 	private static final int PROCESOS_POR_NODO = 2;
 
 	public static void main(String[] args) {
 
-		for (int i = 0; i < args.length; i++) {
-			nodos[i] = args[i];
+		String inputIPs = JOptionPane.showInputDialog(null,
+				"IP separadas por comas",
+				"IP de Nodos",
+				JOptionPane.PLAIN_MESSAGE);
+
+		if (inputIPs == null || inputIPs.trim().isEmpty()) {
+			System.out.println("Pon IPs cabezon");
+			System.exit(0);
 		}
-		System.out.println("Nodos: ");
+
+		String[] ips = inputIPs.split(",");
+		for (int i = 0; i < ips.length; i++) {
+			ips[i] = ips[i].trim();
+		}
+		nodos = ips;
+
+		System.out.println("Nodos configurados: " + nodos.length);
 		for (String nodo : nodos) {
 			System.out.println(" - " + nodo);
 		}
 
 		Interfaz frame = new Interfaz();
+
+		// Peticion inicial a cada nodo con la lista de nodos
+		for (String nodo : nodos) {
+			try {
+				Client client = ClientBuilder.newClient();
+				URI uri = UriBuilder.fromUri(nodo).build();
+				client.target(uri).path("servicio/iniciar").queryParam("nodos", String.join(",", nodos)).request(MediaType.TEXT_PLAIN).get(String.class);
+				System.out.println("Nodo " + nodo + " iniciado correctamente");
+			} catch (Exception e) {
+				System.out.println("Error al iniciar nodo " + nodo + ": " + e.getMessage());
+			}
+		}
+
 		frame.setVisible(true);
 		frame.actualizarTabla();
 	}

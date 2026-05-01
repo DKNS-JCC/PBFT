@@ -14,20 +14,13 @@ import java.util.Map;
 @Path("/servicio")
 public class Servicio {
 
-    private static final int NUM_PROCESOS = 4;
     private int nodoId;
     private int procesosPorNodo = 2;
     private String[] nodos;
-    private String clienteUrl;
-    private Proceso[] procesos;
+    private Proceso[] procesos = new Proceso[0];
     private final Map<Integer, Integer> confirmaciones = new HashMap<>();
 
     public Servicio() {
-        int offset = nodoId * procesosPorNodo;
-        procesos = new Proceso[] {
-            new Proceso(offset + 0, 0, false, nodos, clienteUrl),
-            new Proceso(offset + 1, 0, false, nodos, clienteUrl)
-        };
     }
 
     @GET
@@ -107,7 +100,8 @@ public class Servicio {
     public String confirmacion(@QueryParam("valor") int valor) {
         synchronized (this) {
             confirmaciones.merge(valor, 1, Integer::sum);
-            if (confirmaciones.get(valor) >= (NUM_PROCESOS / 2 + 1)) {
+            int totalProcesos = nodos.length * procesosPorNodo;
+            if (confirmaciones.get(valor) >= (totalProcesos / 2 + 1)) {
                 System.out.println("Consenso confirmado: valor " + valor);
             }
         }

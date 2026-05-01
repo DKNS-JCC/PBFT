@@ -8,26 +8,25 @@ import java.util.Random;
 
 public class Proceso extends Thread {
 
-    //totales
-    private static final int NUM_PROCESOS = 4;
+    private static final int PROCESOS_POR_NODO = 2;
 
     private int id;
     private int valor;
     private boolean error;
+    private int totalProcesos;
     private int[] compromisos;
     private int[] comisiones;
     private String[] nodos;
-    private String clienteUrl;
 
-    public Proceso(int id, int valor, boolean error, String[] nodos, String clienteUrl) {
+    public Proceso(int id, int valor, boolean error, String[] nodos) {
         this.id = id;
         this.valor = valor;
         this.error = error;
-        this.clienteUrl = clienteUrl;
         this.nodos = nodos;
-        this.compromisos = new int[NUM_PROCESOS];
-        this.comisiones = new int[NUM_PROCESOS];
-        for (int i = 0; i < NUM_PROCESOS; i++) {
+        this.totalProcesos = nodos.length * PROCESOS_POR_NODO;
+        this.compromisos = new int[totalProcesos];
+        this.comisiones = new int[totalProcesos];
+        for (int i = 0; i < totalProcesos; i++) {
             compromisos[i] = -1;
             comisiones[i] = -1;
         }
@@ -43,7 +42,7 @@ public class Proceso extends Thread {
     }
 
     public synchronized void resetear() {
-        for (int i = 0; i < NUM_PROCESOS; i++) {
+        for (int i = 0; i < totalProcesos; i++) {
             compromisos[i] = -1;
             comisiones[i] = -1;
         }
@@ -56,7 +55,7 @@ public class Proceso extends Thread {
         for (String nodo : nodos) {
             if (error) {
                 Client client = ClientBuilder.newClient();
-                client.target(nodo).path("servicio/compromiso").queryParam("valor", error).queryParam("procesoId", id).request(MediaType.TEXT_PLAIN).get();
+                client.target(nodo).path("servicio/compromiso").queryParam("valor", errornum).queryParam("procesoId", id).request(MediaType.TEXT_PLAIN).get();
                 continue;
             }
             try {
@@ -77,7 +76,7 @@ public class Proceso extends Thread {
             System.out.println("Proceso " + id + " recibio compromiso de " + procesoId + ": " + v);
 
             Map<Integer, Integer> contador = new HashMap<>();
-            for (int i = 0; i < NUM_PROCESOS; i++) {
+            for (int i = 0; i < totalProcesos; i++) {
                 if (compromisos[i] != -1) {
                     if (contador.containsKey(compromisos[i])) {
                         contador.put(compromisos[i], contador.get(compromisos[i]) + 1);
@@ -88,7 +87,7 @@ public class Proceso extends Thread {
             }
 
             for (Map.Entry<Integer, Integer> entry : contador.entrySet()) {
-                if (entry.getValue() >= (NUM_PROCESOS / 2 + 1)) {
+                if (entry.getValue() >= (totalProcesos / 2 + 1)) {
                     System.out.println("Proceso " + id + " detecta quorum en compromiso: " + entry.getKey());
                     valorQuorum = entry.getKey();
                     break;
@@ -96,7 +95,7 @@ public class Proceso extends Thread {
             }
         }
 
-        // Enviar fuera del synchronized para evitar deadlock
+        // Enviar fuera del synchronized para evitar bloqueo
         if (valorQuorum != -1) {
             for (String nodo : nodos) {
                 try {
@@ -118,7 +117,7 @@ public class Proceso extends Thread {
             System.out.println("Proceso " + id + " recibio comision de " + procesoId + ": " + v);
 
             Map<Integer, Integer> contador = new HashMap<>();
-            for (int i = 0; i < NUM_PROCESOS; i++) {
+            for (int i = 0; i < totalProcesos; i++) {
                 if (comisiones[i] != -1) {
                     if (contador.containsKey(comisiones[i])) {
                         contador.put(comisiones[i], contador.get(comisiones[i]) + 1);
@@ -129,7 +128,7 @@ public class Proceso extends Thread {
             }
 
             for (Map.Entry<Integer, Integer> entry : contador.entrySet()) {
-                if (entry.getValue() >= (NUM_PROCESOS / 2 + 1)) {
+                if (entry.getValue() >= (totalProcesos / 2 + 1)) {
                     System.out.println("Proceso " + id + " DECIDE valor: " + entry.getKey());
                     this.valor = entry.getKey(); //AQUI SE DECIDE EL VALOR FINAL
                     valorDecidido = entry.getKey();
@@ -138,7 +137,7 @@ public class Proceso extends Thread {
             }
         }
 
-        // Enviar fuera del synchronized para evitar deadlock
+        // Enviar fuera del synchronized para evitar bloqueo
         if (valorDecidido != -1) {
             try {
                 Client client = ClientBuilder.newClient();

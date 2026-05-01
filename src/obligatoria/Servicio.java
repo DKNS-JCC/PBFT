@@ -15,7 +15,7 @@ import java.util.Map;
 public class Servicio {
 
     private static final int NUM_PROCESOS = 4;
-    private int nodoId = 0;
+    private int nodoId;
     private int procesosPorNodo = 2;
     private String[] nodos;
     private String clienteUrl;
@@ -33,11 +33,12 @@ public class Servicio {
     @GET
     @Path("iniciar")
     @Produces(MediaType.TEXT_PLAIN)
-    public String iniciar(@QueryParam("nodos") String nodosStr) {
+    public String iniciar(@QueryParam("nodos") String nodosStr, @QueryParam("nodoId") int nodoIdParam) {
+        this.nodoId = nodoIdParam;
         this.nodos = nodosStr.split(",");
-        System.out.println("Servicio iniciado con nodos: " + nodosStr);
+        System.out.println("Servicio iniciado con nodoId " + this.nodoId + " y nodos: " + nodosStr);
         // Reinicializar los procesos con los nodos recibidos
-        int offset = nodoId * procesosPorNodo;
+        int offset = this.nodoId * procesosPorNodo;
         procesos = new Proceso[] {
             new Proceso(offset + 0, 0, false, nodos, clienteUrl),
             new Proceso(offset + 1, 0, false, nodos, clienteUrl)

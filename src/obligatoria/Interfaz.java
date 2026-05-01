@@ -40,23 +40,20 @@ public class Interfaz extends JFrame {
 
 		String[] ips = inputIPs.split(",");
 		for (int i = 0; i < ips.length; i++) {
+			ips[i] = "http://" + ips[i].trim() + "/PBFT/rest";
 			ips[i] = ips[i].trim();
 		}
 		nodos = ips;
 
-		System.out.println("Nodos configurados: " + nodos.length);
-		for (String nodo : nodos) {
-			System.out.println(" - " + nodo);
-		}
-
 		Interfaz frame = new Interfaz();
 
 		// Peticion inicial a cada nodo con la lista de nodos
-		for (String nodo : nodos) {
+		for (int i = 0; i < nodos.length; i++) {
+			String nodo = nodos[i];
 			try {
 				Client client = ClientBuilder.newClient();
 				URI uri = UriBuilder.fromUri(nodo).build();
-				client.target(uri).path("servicio/iniciar").queryParam("nodos", String.join(",", nodos)).request(MediaType.TEXT_PLAIN).get(String.class);
+				client.target(uri).path("servicio/iniciar").queryParam("nodos", String.join(",", nodos)).queryParam("nodoId", i).request(MediaType.TEXT_PLAIN).get(String.class);
 				System.out.println("Nodo " + nodo + " iniciado correctamente");
 			} catch (Exception e) {
 				System.out.println("Error al iniciar nodo " + nodo + ": " + e.getMessage());

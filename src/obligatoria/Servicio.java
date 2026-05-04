@@ -33,8 +33,8 @@ public class Servicio {
         // Reinicializar los procesos con los nodos recibidos
         int offset = this.nodoId * procesosPorNodo;
         procesos = new Proceso[] {
-            new Proceso(offset + 0, 0, false, nodos, clienteUrl),
-            new Proceso(offset + 1, 0, false, nodos, clienteUrl)
+            new Proceso(offset + 0, 0, false, nodos),
+            new Proceso(offset + 1, 0, false, nodos)
         };
         return "ok";
     }

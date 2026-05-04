@@ -40,7 +40,7 @@ public class Interfaz extends JFrame {
 
 		String[] ips = inputIPs.split(",");
 		for (int i = 0; i < ips.length; i++) {
-			ips[i] = "http://" + ips[i].trim() + "/PBFT/rest";
+			ips[i] = "http://" + ips[i].trim() + ":8080/PBFT/rest";
 			ips[i] = ips[i].trim();
 		}
 		nodos = ips;

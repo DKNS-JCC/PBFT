@@ -14,8 +14,8 @@ public class Proceso extends Thread {
     private int valor;
     private boolean error;
     private int totalProcesos;
-    private int[] compromisos;
-    private int[] comisiones;
+    private Integer[] compromisos;
+    private Integer[] comisiones;
     private String[] nodos;
 
     public Proceso(int id, int valor, boolean error, String[] nodos) {
@@ -24,8 +24,8 @@ public class Proceso extends Thread {
         this.error = error;
         this.nodos = nodos;
         this.totalProcesos = nodos.length * PROCESOS_POR_NODO;
-        this.compromisos = new int[totalProcesos];
-        this.comisiones = new int[totalProcesos];
+        this.compromisos = new Integer[totalProcesos];
+        this.comisiones = new Integer[totalProcesos];
         for (int i = 0; i < totalProcesos; i++) {
             compromisos[i] = -1;
             comisiones[i] = -1;
@@ -134,16 +134,6 @@ public class Proceso extends Thread {
                     valorDecidido = entry.getKey();
                     break;
                 }
-            }
-        }
-
-        // Enviar fuera del synchronized para evitar bloqueo
-        if (valorDecidido != -1) {
-            try {
-                Client client = ClientBuilder.newClient();
-                client.target(clienteUrl).path("servicio/confirmacion").queryParam("valor", valorDecidido).request(MediaType.TEXT_PLAIN).get();
-            } catch (Exception e) {
-                System.out.println("Error enviando confirmacion al cliente");
             }
         }
     }

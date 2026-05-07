@@ -148,7 +148,7 @@ public class Interfaz extends JFrame {
 		});
 
 		btnRefrescar.addActionListener(e -> actualizarTabla());
-		
+
 		model.addTableModelListener(e -> {
 		      if (e.getColumn() == 3) {
 		          int row = e.getFirstRow();

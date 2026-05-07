@@ -156,7 +156,7 @@ public class Interfaz extends JFrame {
 		          int id = (int) model.getValueAt(row, 0);
 		          boolean error = (boolean) model.getValueAt(row, 3);
 		          String nodo = nodos[id / PROCESOS_POR_NODO];
-		          Client client = ClientBuilder.newClient();
+		          Client client = ClientBuilder.newClient().property("jersey.config.client.connectTimeout", 2000).property("jersey.config.client.readTimeout", 8000);
 		          URI uri = UriBuilder.fromUri(nodo).build();
 		          client.target(uri).path("servicio/error").queryParam("procesoId", id).queryParam("error", error).request(MediaType.TEXT_PLAIN).get();
 		      }
@@ -165,12 +165,19 @@ public class Interfaz extends JFrame {
 	}
 
 	private void enviarPropuesta(String nodo, String valor) {
+		Client client = ClientBuilder.newClient().property("jersey.config.client.connectTimeout", 2000).property("jersey.config.client.readTimeout", 8000);
 		try {
-			Client client = ClientBuilder.newClient();
 			URI uri = UriBuilder.fromUri(nodo).build();
 			client.target(uri).path("servicio/propuesta").queryParam("valor", valor).request(MediaType.TEXT_PLAIN).get();
-		} catch (Exception ex) {
-			System.out.println("Error propuesta " + nodo + ": " + ex.getMessage());
+		} catch (javax.ws.rs.ProcessingException e) {
+			SwingUtilities.invokeLater(() -> {
+				JOptionPane.showMessageDialog(this, "Tiempo de espera agotado al enviar propuesta a " + nodo, "Error de Comunicación", JOptionPane.ERROR_MESSAGE);
+			});
+		}catch (Exception e) {
+			System.out.println("Error al enviar propuesta a " + nodo + ": " + e.getMessage());
+		}finally {
+			client.close();
+			actualizarTabla();
 		}
 	}
 

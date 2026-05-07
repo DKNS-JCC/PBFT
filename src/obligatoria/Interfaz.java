@@ -6,7 +6,6 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
-import java.awt.List;
 
 import javax.ws.rs.client.*;
 import javax.ws.rs.core.MediaType;

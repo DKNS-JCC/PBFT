@@ -13,6 +13,7 @@ public class Proceso extends Thread {
     private int id;
     private int valor;
     private boolean error;
+    private boolean haDecidido;
     private int totalProcesos;
     private Integer[] compromisos;
     private Integer[] comisiones;
@@ -22,6 +23,7 @@ public class Proceso extends Thread {
         this.id = id;
         this.valor = valor;
         this.error = error;
+        this.haDecidido = false;
         this.nodos = nodos;
         this.totalProcesos = nodos.length * PROCESOS_POR_NODO;
         this.compromisos = new Integer[totalProcesos];
@@ -42,6 +44,7 @@ public class Proceso extends Thread {
     }
 
     public synchronized void resetear() {
+        haDecidido = false;
         for (int i = 0; i < totalProcesos; i++) {
             compromisos[i] = -1;
             comisiones[i] = -1;
@@ -129,10 +132,26 @@ public class Proceso extends Thread {
 
             for (Map.Entry<Integer, Integer> entry : contador.entrySet()) {
                 if (entry.getValue() >= (totalProcesos / 2 + 1)) {
-                    System.out.println("Proceso " + id + " DECIDE valor: " + entry.getKey());
-                    this.valor = entry.getKey(); //AQUI SE DECIDE EL VALOR FINAL
-                    valorDecidido = entry.getKey();
+                    if (!haDecidido) {
+                        System.out.println("Proceso " + id + " DECIDE valor: " + entry.getKey());
+                        this.valor = entry.getKey();
+                        valorDecidido = entry.getKey();
+                        haDecidido = true;
+                    }
                     break;
+                }
+            }
+        }
+
+        if (valorDecidido != -1) {
+            for (String nodo : nodos) {
+                try {
+                    Client client = ClientBuilder.newClient();
+                    client.target(nodo).path("servicio/confirmacion")
+                          .queryParam("valor", valorDecidido)
+                          .request(MediaType.TEXT_PLAIN).get();
+                } catch (Exception e) {
+                    System.out.println("Error enviando confirmacion desde proceso " + id + " a " + nodo);
                 }
             }
         }

@@ -29,18 +29,19 @@ public class Servicio {
         // Reinicializar los procesos con los nodos recibidos
         int offset = this.nodoId * procesosPorNodo;
         procesos = new Proceso[] {
-            new Proceso(offset + 0, 0, false, nodos),
-            new Proceso(offset + 1, 0, false, nodos)
+                new Proceso(offset + 0, 0, false, nodos),
+                new Proceso(offset + 1, 0, false, nodos)
         };
         return "ok";
     }
-
 
     @GET
     @Path("propuesta")
     @Produces(MediaType.TEXT_PLAIN)
     public String propuesta(@QueryParam("valor") int valor) {
-        synchronized (this) { confirmaciones.clear(); }
+        synchronized (this) {
+            confirmaciones.clear();
+        }
         for (int i = 0; i < procesos.length; i++) {
             procesos[i].resetear();
         }
@@ -85,24 +86,38 @@ public class Servicio {
     @Path("error")
     @Produces(MediaType.TEXT_PLAIN)
     public String error(@QueryParam("procesoId") int procesoId, @QueryParam("error") boolean error) {
-    	int offset = nodoId * procesosPorNodo;
-    	procesos[procesoId - offset].setError(error);
+        int offset = nodoId * procesosPorNodo;
+        procesos[procesoId - offset].setError(error);
         return "ok";
     }
 
     @GET
     @Path("confirmacion")
     @Produces(MediaType.TEXT_PLAIN)
-    public String confirmacion(@QueryParam("valor") int valor) {
-        synchronized (this) {
-            confirmaciones.merge(valor, 1, Integer::sum);
-            int totalProcesos = nodos.length * procesosPorNodo;
-            if (confirmaciones.get(valor) >= (totalProcesos / 2 + 1)) {
-                System.out.println("Consenso confirmado: valor " + valor);
+    public void confirmacion(@QueryParam("valor") int valor) {
+        synchronized (confirmaciones) {
+            confirmaciones.put(valor, confirmaciones.getOrDefault(valor, 0) + 1);
+        }
+        int totalConfirmaciones = nodos.length * procesosPorNodo;
+        if (confirmaciones.getOrDefault(valor, 0) >= totalConfirmaciones) {
+            return;
+        } else {
+            return;
+        }
+    }
+
+    @GET
+    @Path("estadoConfirmaciones")
+    @Produces(MediaType.TEXT_PLAIN)
+    public String estadoConfirmaciones() {
+        if (confirmaciones.isEmpty()) {
+            return "No hay confirmaciones";
+        } else {
+            if (confirmaciones.size() >= nodos.length * procesosPorNodo) {
+                return "Todos los procesos han acabado ok";
             }
         }
-        return "ok";
+        return "Aún no";
     }
 
 }
-

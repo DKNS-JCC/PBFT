@@ -164,13 +164,13 @@ public class Interfaz extends JFrame {
 	}
 
 	private void enviarPropuesta(String nodo, String valor) {
-		Client client = ClientBuilder.newClient().property("jersey.config.client.connectTimeout", 2000).property("jersey.config.client.readTimeout", 8000);
+		Client client = ClientBuilder.newClient().property("jersey.config.client.connectTimeout", 4000).property("jersey.config.client.readTimeout", 8000);
 		try {
 			URI uri = UriBuilder.fromUri(nodo).build();
 			client.target(uri).path("servicio/propuesta").queryParam("valor", valor).request(MediaType.TEXT_PLAIN).get();
 		} catch (javax.ws.rs.ProcessingException e) {
 			SwingUtilities.invokeLater(() -> {
-				JOptionPane.showMessageDialog(this, "Tiempo de espera agotado al enviar propuesta a " + nodo, "Error de Comunicación", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(this, "Tiempo de espera agotado al enviar propuesta a " + nodo, "Error de Conexion", JOptionPane.ERROR_MESSAGE);
 			});
 		}catch (Exception e) {
 			System.out.println("Error al enviar propuesta a " + nodo + ": " + e.getMessage());

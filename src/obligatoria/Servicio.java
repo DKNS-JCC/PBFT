@@ -110,14 +110,13 @@ public class Servicio {
     @Path("estadoConfirmaciones")
     @Produces(MediaType.TEXT_PLAIN)
     public String estadoConfirmaciones() {
-        if (confirmaciones.isEmpty()) {
-            return "No hay confirmaciones";
-        } else {
-            if (confirmaciones.size() >= nodos.length * procesosPorNodo) {
-                return "Todos los procesos han acabado ok";
+        int quorum = (nodos.length * procesosPorNodo) / 2 + 1;
+        for (Map.Entry<Integer, Integer> e : confirmaciones.entrySet()) {
+            if (e.getValue() >= quorum) {
+                return "Consenso en valor " + e.getKey() + " (" + e.getValue() + " confirmaciones)";
             }
         }
-        return "Aún no";
+        return "Sin consenso aún";
     }
 
 }

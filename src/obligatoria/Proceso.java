@@ -45,6 +45,7 @@ public class Proceso extends Thread {
 
     public synchronized void resetear() {
         haDecidido = false;
+        comisionEnviada = false;
         for (int i = 0; i < totalProcesos; i++) {
             compromisos[i] = -1;
             comisiones[i] = -1;
@@ -54,11 +55,11 @@ public class Proceso extends Thread {
     // broadcast compromiso a todos los servicios
     public void propuesta(int v) {
         System.out.println("Proceso " + id + " propuesta: " + v);
-        int errornum = new Random().nextInt(100);
+        this.compromiso(this.id, v);
         for (String nodo : nodos) {
             if (error) {
                 Client client = ClientBuilder.newClient();
-                client.target(nodo).path("servicio/compromiso").queryParam("valor", errornum).queryParam("procesoId", id).request(MediaType.TEXT_PLAIN).get();
+                client.target(nodo).path("servicio/compromiso").queryParam("valor", new Random().nextInt(100)).queryParam("procesoId", id).request(MediaType.TEXT_PLAIN).get();
                 continue;
             }
             try {
@@ -71,6 +72,8 @@ public class Proceso extends Thread {
     }
 
     // guarda y comprueba quorum
+    private boolean comisionEnviada = false;
+
     public void compromiso(int procesoId, int v) {
         int valorQuorum = -1;
 
@@ -81,10 +84,18 @@ public class Proceso extends Thread {
             Map<Integer, Integer> contador = new HashMap<>();
             for (int i = 0; i < totalProcesos; i++) {
                 if (compromisos[i] != -1) {
+                    //Suma votos para cada valor comprometido
                     if (contador.containsKey(compromisos[i])) {
                         contador.put(compromisos[i], contador.get(compromisos[i]) + 1);
-                    } else {
+                    } 
+                    //Si ya se ha enviado una comisión, no se envían más aunque se alcance quorum en otro valor
+                    if (comisionEnviada) {
+                        return;
+                    }
+                    //Si se alcanza quorum en algún valor, se envía la comisión y se marca que ya se ha enviado para no enviar más
+                    else {
                         contador.put(compromisos[i], 1);
+                        comisionEnviada = true;
                     }
                 }
             }
@@ -98,7 +109,6 @@ public class Proceso extends Thread {
             }
         }
 
-        // Enviar fuera del synchronized para evitar bloqueo
         if (valorQuorum != -1) {
             for (String nodo : nodos) {
                 try {

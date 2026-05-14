@@ -87,15 +87,8 @@ public class Proceso extends Thread {
                     //Suma votos para cada valor comprometido
                     if (contador.containsKey(compromisos[i])) {
                         contador.put(compromisos[i], contador.get(compromisos[i]) + 1);
-                    } 
-                    //Si ya se ha enviado una comisión, no se envían más aunque se alcance quorum en otro valor
-                    if (comisionEnviada) {
-                        return;
-                    }
-                    //Si se alcanza quorum en algún valor, se envía la comisión y se marca que ya se ha enviado para no enviar más
-                    else {
+                    } else {
                         contador.put(compromisos[i], 1);
-                        comisionEnviada = true;
                     }
                 }
             }
@@ -106,6 +99,15 @@ public class Proceso extends Thread {
                     valorQuorum = entry.getKey();
                     break;
                 }
+            }
+
+            //Si ya se ha enviado una comisión, no se envían más aunque se vuelva a alcanzar quorum
+            if (comisionEnviada) {
+                return;
+            }
+            //Marcamos que ya se va a enviar la comisión para no enviar más en futuras llamadas
+            if (valorQuorum != -1) {
+                comisionEnviada = true;
             }
         }
 

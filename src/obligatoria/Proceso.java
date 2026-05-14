@@ -101,11 +101,9 @@ public class Proceso extends Thread {
                 }
             }
 
-            //Si ya se ha enviado una comisión, no se envían más aunque se vuelva a alcanzar quorum
             if (comisionEnviada) {
                 return;
             }
-            //Marcamos que ya se va a enviar la comisión para no enviar más en futuras llamadas
             if (valorQuorum != -1) {
                 comisionEnviada = true;
             }
